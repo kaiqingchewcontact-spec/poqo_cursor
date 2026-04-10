@@ -10,13 +10,6 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
-
   final prefs = await SharedPreferences.getInstance();
 
   runApp(
@@ -29,19 +22,37 @@ void main() async {
   );
 }
 
-class PoqoApp extends ConsumerWidget {
+class PoqoApp extends ConsumerStatefulWidget {
   const PoqoApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PoqoApp> createState() => _PoqoAppState();
+}
+
+class _PoqoAppState extends ConsumerState<PoqoApp> {
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
+    final isDark = user.isDarkMode;
+
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarContrastEnforced: false,
+      ),
+    );
 
     return MaterialApp(
       title: 'Poqo',
       debugShowCheckedModeBanner: false,
       theme: PoqoTheme.lightTheme(),
       darkTheme: PoqoTheme.darkTheme(),
-      themeMode: user.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: const MainShell(),
     );
   }

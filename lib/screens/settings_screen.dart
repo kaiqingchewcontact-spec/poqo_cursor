@@ -1,16 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../constants/legal_urls.dart';
 import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
 import '../providers/storage_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium_badge.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String? _appVersion;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) {
+        setState(() => _appVersion = '${info.version} (${info.buildNumber})');
+      }
+    });
+  }
+
+  Future<void> _openExternalUrl(String url) async {
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open link')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
     final theme = Theme.of(context);
 
@@ -30,11 +60,9 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Subscription card
               _SubscriptionCard(user: user),
               const SizedBox(height: 24),
 
-              // Appearance
               _SettingsSection(
                 title: 'Appearance',
                 children: [
@@ -55,7 +83,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Reminders
               _SettingsSection(
                 title: 'Reminders',
                 children: [
@@ -76,7 +103,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Data
               _SettingsSection(
                 title: 'Data',
                 children: [
@@ -102,24 +128,23 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // About
               _SettingsSection(
                 title: 'About',
                 children: [
                   _SettingsTile(
                     icon: Icons.info_outline_rounded,
                     title: 'Poqo',
-                    subtitle: 'Version 1.0.0',
+                    subtitle: _appVersion ?? 'Loading version…',
                   ),
                   _SettingsTile(
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy Policy',
-                    onTap: () {},
+                    onTap: () => _openExternalUrl(kPrivacyPolicyUrl),
                   ),
                   _SettingsTile(
                     icon: Icons.description_outlined,
                     title: 'Terms of Service',
-                    onTap: () {},
+                    onTap: () => _openExternalUrl(kTermsOfServiceUrl),
                   ),
                 ],
               ),
