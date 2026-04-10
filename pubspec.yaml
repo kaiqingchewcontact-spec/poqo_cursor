@@ -1,7 +1,7 @@
 name: poqo
 description: "The pocket companion for a calmer, better you. One small step daily."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.11.4
@@ -18,6 +18,8 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.2
   json_annotation: ^4.9.0
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.1.2
 
 dev_dependencies:
   flutter_test:

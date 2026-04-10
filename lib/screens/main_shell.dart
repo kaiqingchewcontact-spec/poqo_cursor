@@ -14,63 +14,64 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
+  /// 0 = Home, 1 = Stats, 2 = Settings
+  int _pageIndex = 0;
 
-  final _screens = const [
+  static const _pages = [
     HomeScreen(),
     StatsScreen(),
-    SizedBox.shrink(),
     SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex == 2 ? 0 : _currentIndex,
-        children: _screens,
+        index: _pageIndex,
+        children: _pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: theme.dividerTheme.color ?? Colors.grey.shade200,
-              width: 0.5,
+      floatingActionButton: FloatingActionButton.large(
+        onPressed: () => _showQuickLogSheet(context),
+        elevation: 2,
+        child: const Icon(Icons.add_rounded, size: 32),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _DockNavItem(
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    selected: _pageIndex == 0,
+                    onTap: () => setState(() => _pageIndex = 0),
+                  ),
+                  _DockNavItem(
+                    icon: Icons.bar_chart_rounded,
+                    label: 'Stats',
+                    selected: _pageIndex == 1,
+                    onTap: () => setState(() => _pageIndex = 1),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex > 2 ? _currentIndex - 1 : _currentIndex,
-          onTap: (index) {
-            if (index == 2) {
-              _showQuickLogSheet(context);
-            } else {
-              setState(() {
-                _currentIndex = index > 1 ? index + 1 : index;
-              });
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_rounded),
-              activeIcon: Icon(Icons.bar_chart_rounded),
-              label: 'Stats',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_rounded, size: 32),
-              label: 'Log',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings_rounded),
-              label: 'Settings',
+            const SizedBox(width: 72),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _DockNavItem(
+                    icon: Icons.settings_rounded,
+                    label: 'Settings',
+                    selected: _pageIndex == 2,
+                    onTap: () => setState(() => _pageIndex = 2),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -80,34 +81,38 @@ class _MainShellState extends State<MainShell> {
 
   void _showQuickLogSheet(BuildContext context) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          8,
+          24,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface
-                    .withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Quick Log',
-              style: TextStyle(
-                fontSize: 20,
+            Text(
+              'Quick log',
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            Text(
+              'Log mood or a short reflection in one tap.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: schemeOnSurfaceMuted(theme),
+              ),
+            ),
+            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -117,9 +122,9 @@ class _MainShellState extends State<MainShell> {
                     color: PoqoColors.categoryMorning,
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(
+                      Navigator.push<void>(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) => const MoodScreen(),
                         ),
                       );
@@ -134,9 +139,9 @@ class _MainShellState extends State<MainShell> {
                     color: PoqoColors.categoryEvening,
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(
+                      Navigator.push<void>(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) => const ReflectionScreen(),
                         ),
                       );
@@ -145,7 +150,55 @@ class _MainShellState extends State<MainShell> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Color schemeOnSurfaceMuted(ThemeData theme) =>
+    theme.colorScheme.onSurface.withValues(alpha: 0.55);
+
+class _DockNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DockNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = selected
+        ? theme.colorScheme.primary
+        : schemeOnSurfaceMuted(theme);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -168,30 +221,32 @@ class _QuickLogOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha: 0.2),
+    return Material(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 22),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: color,
+          child: Column(
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
